@@ -1,0 +1,29 @@
+# secrets & local config
+.env
+config.local.yaml
+
+# state
+*.db
+*.sqlite3
+data/
+
+# python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+*.egg-info/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# playwright
+/ms-playwright/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/

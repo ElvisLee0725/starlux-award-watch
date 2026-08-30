@@ -1,0 +1,68 @@
+# Starlux award watch — search definitions and behavior.
+# Edit freely; no code changes needed to add/remove searches.
+
+searches:
+  # The high-value targets: Asia -> North America, single saver seat at 75k.
+  - name: "TPE->LAX Starlux business (saver)"
+    origin: TPE
+    destination: LAX
+    carrier: JX          # Starlux only
+    cabin: business       # economy | premium | business | first
+    max_miles: 75000      # alert only when per-person price <= this
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  - name: "TPE->ONT Starlux business (saver)"
+    origin: TPE
+    destination: ONT
+    carrier: JX
+    cabin: business
+    max_miles: 75000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  # Reverse direction — kept on, will simply never alert if it stays above 75k.
+  - name: "LAX->TPE Starlux business (saver)"
+    origin: LAX
+    destination: TPE
+    carrier: JX
+    cabin: business
+    max_miles: 75000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  - name: "ONT->TPE Starlux business (saver)"
+    origin: ONT
+    destination: TPE
+    carrier: JX
+    cabin: business
+    max_miles: 75000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+# How far ahead to scan. Alaska opens partner award space ~330 days out;
+# occasionally Starlux loads closer to 350. We probe to max_days_ahead and
+# stop early on the first "no schedule" response.
+window:
+  min_days_ahead: 1
+  max_days_ahead: 331
+
+# Polling. A full sweep covers the whole window; the far-edge pass re-checks
+# only the newest bookable dates frequently, because that's where the lone
+# saver seat appears before someone else takes it.
+poll:
+  full_sweep_minutes: 120
+  far_edge_minutes: 20
+  far_edge_days: 21           # "newest" = last N days of the window
+  jitter_pct: 0.3             # randomize each interval +/- 30%
+  request_delay_seconds: [3, 8]   # random pause between calendar requests
+
+alerts:
+  channel: sms
+  renotify_after_hours: 12    # still available this many hours later -> text again
+  on_price_drop: true         # a seen date getting cheaper -> text again
+  quiet_hours: null           # e.g. [23, 7] to suppress night texts (still logged)
