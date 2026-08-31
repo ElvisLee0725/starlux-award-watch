@@ -32,12 +32,15 @@ class Runner:
     def _far_edge_range(self) -> tuple[date, date]:
         today = date.today()
         end = today + timedelta(days=self.cfg.window.max_days_ahead)
-        start = end - timedelta(days=self.cfg.poll.far_edge_days)
+        earliest = today + timedelta(days=self.cfg.window.min_days_ahead)
+        start = max(earliest, end - timedelta(days=self.cfg.poll.far_edge_days))
         return (start, end)
 
     # -- one pass --------------------------------------------------------------
     def run_pass(self, start: date, end: date, label: str) -> None:
-        for search in self.cfg.searches:
+        for i, search in enumerate(self.cfg.searches):
+            if i:  # brief gap between searches; per-page pacing lives in the fetcher
+                time.sleep(random.uniform(*self.cfg.poll.request_delay_seconds))
             try:
                 days = self.fetcher.fetch(search, start, end)
             except ChallengeRequired as exc:
@@ -62,9 +65,6 @@ class Runner:
 
             for hit in filter_hits(search, days):
                 self._maybe_alert(hit)
-
-            lo, hi = self.cfg.poll.request_delay_seconds
-            time.sleep(random.uniform(lo, hi))
 
     def _maybe_alert(self, hit: AwardDay) -> None:
         if not self.store.should_alert(
@@ -95,10 +95,11 @@ class Runner:
         return minutes * random.uniform(1 - j, 1 + j) * 60
 
     # -- main loop ----------------------------------------------------------
-    def loop(self) -> None:
+    def loop(self, max_cycles: int | None = None) -> None:
         next_full = 0.0
         next_edge = 0.0
-        while True:
+        cycles = 0
+        while max_cycles is None or cycles < max_cycles:
             now = time.monotonic()
             if now >= next_full:
                 lo, hi = self._full_range()
@@ -110,4 +111,8 @@ class Runner:
                 log.info("far_edge_start", start=str(lo), end=str(hi))
                 self.run_pass(lo, hi, "edge")
                 next_edge = time.monotonic() + self._jitter(self.cfg.poll.far_edge_minutes)
-            time.sleep(min(next_full, next_edge) - time.monotonic())
+            cycles += 1
+            nap = min(next_full, next_edge) - time.monotonic()
+            if nap > 0:
+                # wake at least hourly so a slept-through deadline fires promptly
+                time.sleep(min(nap, 3600))

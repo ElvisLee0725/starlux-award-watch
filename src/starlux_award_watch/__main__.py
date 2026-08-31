@@ -38,7 +38,9 @@ def main() -> None:
     ap.add_argument("--route", metavar="SUBSTR",
                     help="only run searches whose name contains SUBSTR")
     ap.add_argument("--test-sms", action="store_true",
-                    help="send one test SMS via Twilio and exit")
+                    help="send one test alert via the configured channel and exit")
+    ap.add_argument("--max-cycles", type=int, metavar="N",
+                    help="run the scheduler loop for N cycles then exit (testing)")
     args = ap.parse_args()
 
     _load_dotenv()
@@ -80,7 +82,7 @@ def main() -> None:
                      searches=[s.name for s in cfg.searches])
             runner.run_pass(lo, hi, "once")
         else:
-            runner.loop()
+            runner.loop(max_cycles=args.max_cycles)
     finally:
         fetcher.close()
         store.close()
