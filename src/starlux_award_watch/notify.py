@@ -42,19 +42,26 @@ class PushoverNotifier:
 
     API = "https://api.pushover.net/1/messages.json"
 
-    def __init__(self) -> None:
+    def __init__(self, priority: int = 2, retry_s: int = 60,
+                 expire_s: int = 3600) -> None:
         self.token = os.environ["PUSHOVER_API_TOKEN"]
         self.user = os.environ["PUSHOVER_USER_KEY"]
         self.device = os.environ.get("PUSHOVER_DEVICE") or None
+        self.priority = priority          # 2 = emergency (retries until acked)
+        self.retry_s = retry_s
+        self.expire_s = expire_s
 
     def send(self, day: AwardDay) -> str:
-        # priority 1 = bypass quiet hours; time-sensitive award seat
+        extra = {}
+        if self.priority == 2:
+            extra = {"retry": self.retry_s, "expire": self.expire_s}
         return self._post(
             message=format_alert(day),
             title=f"Starlux saver: {day.origin}->{day.destination} {day.depart_date:%d %b}",
-            priority=1,
+            priority=self.priority,
             url="https://www.alaskaair.com/",
             url_title="Open Alaska",
+            **extra,
         )
 
     def send_text(self, body: str) -> str:
@@ -105,6 +112,11 @@ class ConsoleNotifier:
         return "console"
 
 
-def make_notifier(channel: str):
-    return {"pushover": PushoverNotifier, "sms": SmsNotifier,
-            "console": ConsoleNotifier}[channel]()
+def make_notifier(channel: str, alerts=None):
+    if channel == "pushover":
+        if alerts is None:
+            return PushoverNotifier()
+        return PushoverNotifier(priority=alerts.pushover_priority,
+                                retry_s=alerts.pushover_retry_s,
+                                expire_s=alerts.pushover_expire_s)
+    return {"sms": SmsNotifier, "console": ConsoleNotifier}[channel]()

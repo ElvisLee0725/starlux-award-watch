@@ -46,6 +46,11 @@ class Alerts(BaseModel):
     renotify_after_hours: float = 12
     on_price_drop: bool = True
     quiet_hours: tuple[int, int] | None = None
+    # Pushover priority for a hit: 2 = emergency (re-alerts every `retry_s`
+    # until you ack, up to `expire_s`); 1 = high; 0 = normal.
+    pushover_priority: int = 2
+    pushover_retry_s: int = 60
+    pushover_expire_s: int = 3600
 
 
 class Browser(BaseModel):

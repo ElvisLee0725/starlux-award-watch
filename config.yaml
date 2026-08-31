@@ -64,8 +64,11 @@ poll:
 alerts:
   channel: pushover           # pushover | sms | console
   renotify_after_hours: 12    # still available this many hours later -> alert again
-  on_price_drop: true         # a seen date getting cheaper -> text again
-  quiet_hours: null           # e.g. [23, 7] to suppress night texts (still logged)
+  on_price_drop: true         # a seen date getting cheaper -> alert again
+  quiet_hours: null           # e.g. [23, 7] to suppress night alerts (still logged)
+  pushover_priority: 2        # 2 = emergency (re-alerts until you ack); 1 = high; 0 = normal
+  pushover_retry_s: 60        # emergency: seconds between re-alerts
+  pushover_expire_s: 3600     # emergency: stop re-alerting after this many seconds
 
 browser:
   profile_dir: data/chrome-profile   # warmed by hand once (scripts/recon.py)
