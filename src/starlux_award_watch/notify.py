@@ -2,11 +2,19 @@
 from __future__ import annotations
 
 import os
+import ssl
 import urllib.parse
 import urllib.request
 from datetime import datetime
 
 from .fetch.base import AwardDay
+
+try:  # python.org macOS builds ship without a usable system CA bundle
+    import certifi
+
+    _SSL_CTX: ssl.SSLContext | None = ssl.create_default_context(cafile=certifi.where())
+except Exception:  # pragma: no cover
+    _SSL_CTX = None
 
 
 def format_alert(day: AwardDay) -> str:
@@ -58,7 +66,8 @@ class PushoverNotifier:
             data["device"] = self.device
         data.update({k: v for k, v in fields.items() if v is not None})
         payload = urllib.parse.urlencode(data).encode()
-        with urllib.request.urlopen(self.API, payload, timeout=15) as r:
+        with urllib.request.urlopen(self.API, payload, timeout=15,
+                                    context=_SSL_CTX) as r:
             body = r.read().decode()
         if r.status != 200:
             raise RuntimeError(f"pushover {r.status}: {body}")

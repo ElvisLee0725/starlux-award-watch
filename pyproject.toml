@@ -11,6 +11,7 @@ dependencies = [
     "playwright>=1.44",
     "lxml>=5.0",
     "cssselect>=1.2",
+    "certifi>=2024.2",
 ]
 
 [project.optional-dependencies]
