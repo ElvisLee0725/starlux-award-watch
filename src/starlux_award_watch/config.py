@@ -42,7 +42,7 @@ class Poll(BaseModel):
 
 
 class Alerts(BaseModel):
-    channel: Literal["sms"] = "sms"
+    channel: Literal["pushover", "sms", "console"] = "pushover"
     renotify_after_hours: float = 12
     on_price_drop: bool = True
     quiet_hours: tuple[int, int] | None = None

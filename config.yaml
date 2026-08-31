@@ -62,8 +62,8 @@ poll:
   request_delay_seconds: [3, 8]   # random pause between calendar requests
 
 alerts:
-  channel: sms
-  renotify_after_hours: 12    # still available this many hours later -> text again
+  channel: pushover           # pushover | sms | console
+  renotify_after_hours: 12    # still available this many hours later -> alert again
   on_price_drop: true         # a seen date getting cheaper -> text again
   quiet_hours: null           # e.g. [23, 7] to suppress night texts (still logged)
 

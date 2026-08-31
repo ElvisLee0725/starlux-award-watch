@@ -10,7 +10,7 @@ import structlog
 from .config import load_config
 from .fetch.browser import AlaskaBrowserFetcher
 from .match import filter_hits
-from .notify import ConsoleNotifier, SmsNotifier
+from .notify import ConsoleNotifier, make_notifier
 from .scheduler import Runner
 from .store import Store
 
@@ -44,11 +44,12 @@ def main() -> None:
     _load_dotenv()
 
     if args.test_sms:
-        from .notify import SmsNotifier
-        sid = SmsNotifier().send_text(
-            "starlux-award-watch: test message. If you got this, SMS alerts work."
+        from .notify import make_notifier
+        cfg = load_config()
+        res = make_notifier(cfg.alerts.channel).send_text(
+            "starlux-award-watch: test alert. If you got this, alerts work."
         )
-        log.info("test_sms_sent", sid=sid)
+        log.info("test_alert_sent", channel=cfg.alerts.channel, result=res)
         return
 
     cfg = load_config()
@@ -69,7 +70,7 @@ def main() -> None:
         shoulder_prefilter=cfg.browser.shoulder_prefilter,
     )
     store = Store()
-    notifier = ConsoleNotifier() if args.dry_run else SmsNotifier()
+    notifier = ConsoleNotifier() if args.dry_run else make_notifier(cfg.alerts.channel)
     runner = Runner(cfg, fetcher, store, notifier)
 
     try:
