@@ -48,11 +48,19 @@ class Alerts(BaseModel):
     quiet_hours: tuple[int, int] | None = None
 
 
+class Browser(BaseModel):
+    profile_dir: str = "data/chrome-profile"
+    headless: bool = False
+    nav_timeout_ms: int = 45_000
+    challenge_cooldown_minutes: float = 30
+
+
 class Config(BaseModel):
     searches: list[Search] = Field(min_length=1)
     window: Window = Window()
     poll: Poll = Poll()
     alerts: Alerts = Alerts()
+    browser: Browser = Browser()
 
 
 def load_config(path: str | os.PathLike[str] | None = None) -> Config:

@@ -5,15 +5,15 @@ description = "Watch the Alaska Airlines award calendar for Starlux (JX) busines
 requires-python = ">=3.11"
 dependencies = [
     "pyyaml>=6.0",
-    "curl-cffi>=0.7",
     "pydantic>=2.7",
     "twilio>=9.0",
-    "apscheduler>=3.10",
     "structlog>=24.1",
+    "playwright>=1.44",
+    "lxml>=5.0",
+    "cssselect>=1.2",
 ]
 
 [project.optional-dependencies]
-browser = ["playwright>=1.44"]
 dev = ["pytest>=8.0", "ruff>=0.5", "mypy>=1.10"]
 
 [project.scripts]

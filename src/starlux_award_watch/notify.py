@@ -29,9 +29,10 @@ class SmsNotifier:
         self.client = Client(self.sid, self.token)
 
     def send(self, day: AwardDay) -> str:
-        msg = self.client.messages.create(
-            body=format_sms(day), from_=self.from_, to=self.to
-        )
+        return self.send_text(format_sms(day))
+
+    def send_text(self, body: str) -> str:
+        msg = self.client.messages.create(body=body, from_=self.from_, to=self.to)
         return msg.sid
 
 
@@ -39,5 +40,8 @@ class ConsoleNotifier:
     """Stand-in for local testing without Twilio."""
 
     def send(self, day: AwardDay) -> str:
-        print("=== ALERT ===\n" + format_sms(day) + "\n=============")
+        return self.send_text(format_sms(day))
+
+    def send_text(self, body: str) -> str:
+        print("=== ALERT ===\n" + body + "\n=============")
         return "console"

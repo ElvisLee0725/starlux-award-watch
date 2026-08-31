@@ -9,6 +9,7 @@ import structlog
 
 from .config import Config
 from .fetch.base import AwardDay, Fetcher
+from .fetch.browser import ChallengeRequired
 from .match import filter_hits
 from .store import Store
 
@@ -39,6 +40,19 @@ class Runner:
         for search in self.cfg.searches:
             try:
                 days = self.fetcher.fetch(search, start, end)
+            except ChallengeRequired as exc:
+                cooldown = self.cfg.browser.challenge_cooldown_minutes
+                log.warning("captcha", search=search.name, url=exc.url, cooldown_min=cooldown)
+                try:
+                    self.notifier.send_text(
+                        f"⚠️ starlux-award-watch hit an Alaska CAPTCHA.\n"
+                        f"Open the profile browser and clear it:\n{exc.url}\n"
+                        f"Pausing {cooldown:g} min."
+                    )
+                except Exception:  # noqa: BLE001
+                    pass
+                time.sleep(cooldown * 60)
+                return  # abort this pass; next tick starts fresh
             except Exception as exc:  # noqa: BLE001 — log and keep other searches alive
                 log.warning("fetch_failed", search=search.name, pass_=label, error=str(exc))
                 continue

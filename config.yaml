@@ -66,3 +66,9 @@ alerts:
   renotify_after_hours: 12    # still available this many hours later -> text again
   on_price_drop: true         # a seen date getting cheaper -> text again
   quiet_hours: null           # e.g. [23, 7] to suppress night texts (still logged)
+
+browser:
+  profile_dir: data/chrome-profile   # warmed by hand once (scripts/recon.py)
+  headless: false                    # true on a headless server (needs xvfb)
+  nav_timeout_ms: 45000
+  challenge_cooldown_minutes: 30     # pause a search this long after a CAPTCHA
