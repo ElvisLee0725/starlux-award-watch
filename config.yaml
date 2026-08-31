@@ -59,7 +59,7 @@ poll:
   far_edge_minutes: 20
   far_edge_days: 21           # "newest" = last N days of the window
   jitter_pct: 0.3             # randomize each interval +/- 30%
-  request_delay_seconds: [3, 8]   # random pause between calendar requests
+  request_delay_seconds: [8, 20]  # random pause between page loads (gentler = fewer CAPTCHAs)
 
 alerts:
   channel: pushover           # pushover | sms | console
