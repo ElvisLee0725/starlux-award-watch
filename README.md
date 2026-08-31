@@ -7,10 +7,15 @@ flights gets taken fast, so speed of notification is the whole point.
 
 ## Status
 
-Scaffold. The data-fetch layer is stubbed pending a recon session to capture
-Alaska's award-calendar endpoint (see `src/starlux_award_watch/fetch/api.py`
-TODO). Everything around it — config, match rules, dedup/alert logic, SMS,
-scheduler — is in place.
+**Fetcher works against live Alaska/Atmos data.** Recon nailed down the direct
+results URL and DOM contract; `fetch/browser.py` navigates per date with a warm
+persistent Chrome profile and parses the flight cards. A live probe confirms
+nonstop `JX 2` business at 75k is flagged as a hit and connections / non-JX
+carriers / 175k fares are rejected.
+
+Left to do: Twilio creds in `.env`; verify `TPE↔ONT` nonstop; tune pacing for
+the full ~330-day sweep (CAPTCHA risk over ~1300 navs); exercise the scheduler
+`loop()`; `Dockerfile` + deploy to the home box.
 
 ## How it works
 
