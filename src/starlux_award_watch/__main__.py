@@ -37,9 +37,20 @@ def main() -> None:
                     help="cap the scan to the next N days (for testing)")
     ap.add_argument("--route", metavar="SUBSTR",
                     help="only run searches whose name contains SUBSTR")
+    ap.add_argument("--test-sms", action="store_true",
+                    help="send one test SMS via Twilio and exit")
     args = ap.parse_args()
 
     _load_dotenv()
+
+    if args.test_sms:
+        from .notify import SmsNotifier
+        sid = SmsNotifier().send_text(
+            "starlux-award-watch: test message. If you got this, SMS alerts work."
+        )
+        log.info("test_sms_sent", sid=sid)
+        return
+
     cfg = load_config()
 
     if args.route:
@@ -55,6 +66,7 @@ def main() -> None:
         headless=cfg.browser.headless and not args.headed,
         request_delay=cfg.poll.request_delay_seconds,
         nav_timeout_ms=cfg.browser.nav_timeout_ms,
+        shoulder_prefilter=cfg.browser.shoulder_prefilter,
     )
     store = Store()
     notifier = ConsoleNotifier() if args.dry_run else SmsNotifier()

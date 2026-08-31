@@ -74,14 +74,17 @@ class AlaskaBrowserFetcher(Fetcher):
 
     def __init__(self, profile_dir: str, headless: bool = True,
                  request_delay: tuple[float, float] = (3.0, 8.0),
-                 nav_timeout_ms: int = 45_000) -> None:
+                 nav_timeout_ms: int = 45_000,
+                 shoulder_prefilter: bool = True) -> None:
         self.profile_dir = profile_dir
         self.headless = headless
         self.request_delay = request_delay
         self.nav_timeout_ms = nav_timeout_ms
+        self.shoulder_prefilter = shoulder_prefilter
         self._pw = None
         self._ctx = None
         self._page = None
+        self._last_shoulder: dict[str, int | None] = {}
 
     # -- lifecycle -------------------------------------------------------------
     def _ensure(self):
@@ -99,6 +102,23 @@ class AlaskaBrowserFetcher(Fetcher):
         )
         self._page = self._ctx.pages[0] if self._ctx.pages else self._ctx.new_page()
         self._page.set_default_timeout(self.nav_timeout_ms)
+        self._page.on("response", self._capture_shoulder)
+
+    def _capture_shoulder(self, resp) -> None:
+        if "shoulderDates" not in resp.url:
+            return
+        try:
+            data = resp.json()
+        except Exception:
+            return
+        rows = data.get("calendarDates") or data.get("shoulderDates") or []
+        got: dict[str, int | None] = {}
+        for r in rows:
+            d = r.get("date")
+            if d:
+                got[d] = r.get("awardPoints")
+        if got:
+            self._last_shoulder = got
 
     def close(self):
         for obj, meth in ((self._ctx, "close"), (self._pw, "stop")):
@@ -113,12 +133,55 @@ class AlaskaBrowserFetcher(Fetcher):
     def fetch(self, search: Search, start: date, end: date) -> list[AwardDay]:
         self._ensure()
         out: list[AwardDay] = []
+
+        skip: set[date] = set()
+        if self.shoulder_prefilter and (end - start).days >= 20:
+            cheapest = self._cheapest_by_date(search, start, end)
+            for d, mi in cheapest.items():
+                # business can't be cheaper than the cheapest cabin shown, so if
+                # even that is over target, no point loading the full page.
+                if mi is not None and mi > search.max_miles:
+                    skip.add(d)
+            log.info("shoulder_prefilter", search=search.name,
+                     covered=len(cheapest), skipped=len(skip))
+
         day = start
         while day <= end:
+            if day in skip:
+                day += timedelta(days=1)
+                continue
             out.extend(self._fetch_day(search, day))
             day += timedelta(days=1)
             time.sleep(random.uniform(*self.request_delay))
         return out
+
+    def _cheapest_by_date(self, search: Search, start: date,
+                          end: date) -> dict[date, int | None]:
+        """Harvest the 31-day 'shoulderDates' strip in ~28-day strides so we
+        learn the cheapest award per day with ~1 page load per month."""
+        out: dict[date, int | None] = {}
+        center = start + timedelta(days=15)
+        while center <= end + timedelta(days=15):
+            self._last_shoulder = {}
+            url = RESULTS_URL.format(pax=search.passengers, o=search.origin,
+                                     d=search.destination, od=center.isoformat())
+            try:
+                self._page.goto(url, wait_until="domcontentloaded",
+                                timeout=self.nav_timeout_ms)
+                self._raise_if_challenged(url)
+                self._page.wait_for_timeout(3500)  # let shoulderDates POST land
+            except ChallengeRequired:
+                raise
+            except Exception as exc:  # noqa: BLE001
+                log.warning("shoulder_nav_failed", center=str(center), error=str(exc))
+            for ds, mi in self._last_shoulder.items():
+                try:
+                    out[date.fromisoformat(ds)] = mi
+                except ValueError:
+                    continue
+            center += timedelta(days=28)
+            time.sleep(random.uniform(*self.request_delay))
+        return {d: v for d, v in out.items() if start <= d <= end}
 
     # -- one day ------------------------------------------------------------
     def _fetch_day(self, search: Search, day: date) -> list[AwardDay]:

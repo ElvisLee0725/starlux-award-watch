@@ -53,6 +53,7 @@ class Browser(BaseModel):
     headless: bool = False
     nav_timeout_ms: int = 45_000
     challenge_cooldown_minutes: float = 30
+    shoulder_prefilter: bool = True
 
 
 class Config(BaseModel):

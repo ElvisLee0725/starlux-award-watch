@@ -72,3 +72,4 @@ browser:
   headless: false                    # true on a headless server (needs xvfb)
   nav_timeout_ms: 45000
   challenge_cooldown_minutes: 30     # pause a search this long after a CAPTCHA
+  shoulder_prefilter: true          # ~1 load/month to skip days already >75k
