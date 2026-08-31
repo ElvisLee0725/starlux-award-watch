@@ -51,9 +51,10 @@ window:
   min_days_ahead: 1
   max_days_ahead: 331
 
-# Polling. A full sweep covers the whole window; the far-edge pass re-checks
-# only the newest bookable dates frequently, because that's where the lone
-# saver seat appears before someone else takes it.
+# Polling. A full sweep = one month-calendar load per route-month (~12/route)
+# plus a full-results confirmation for each day the calendar flags at/under
+# max_miles. The far-edge pass re-checks only the newest bookable dates
+# frequently, because that's where the lone saver seat appears first.
 poll:
   full_sweep_minutes: 120
   far_edge_minutes: 20
@@ -75,4 +76,4 @@ browser:
   headless: false                    # true on a headless server (needs xvfb)
   nav_timeout_ms: 45000
   challenge_cooldown_minutes: 30     # pause a search this long after a CAPTCHA
-  shoulder_prefilter: true          # ~1 load/month to skip days already >75k
+  confirm_candidates: true           # load a day's full results to confirm nonstop JX

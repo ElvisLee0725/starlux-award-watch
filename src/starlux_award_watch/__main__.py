@@ -69,7 +69,7 @@ def main() -> None:
         headless=cfg.browser.headless and not args.headed,
         request_delay=cfg.poll.request_delay_seconds,
         nav_timeout_ms=cfg.browser.nav_timeout_ms,
-        shoulder_prefilter=cfg.browser.shoulder_prefilter,
+        confirm_candidates=cfg.browser.confirm_candidates,
     )
     store = Store()
     notifier = ConsoleNotifier() if args.dry_run else make_notifier(cfg.alerts.channel, cfg.alerts)

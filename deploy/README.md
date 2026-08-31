@@ -27,6 +27,10 @@ Then install the agent:
 It writes `~/Library/LaunchAgents/com.starlux-award-watch.plist`, loads it, and
 tails `data/agent.log`. The agent runs at login and restarts on crash.
 
+A full 4-route × 331-day sweep is ~50 page loads (~12 month-calendar loads per
+route plus a confirmation for each day flagged at/under target), so it finishes
+in minutes, not hours.
+
 Manage it:
 
 ```bash

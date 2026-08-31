@@ -58,7 +58,10 @@ class Browser(BaseModel):
     headless: bool = False
     nav_timeout_ms: int = 45_000
     challenge_cooldown_minutes: float = 30
-    shoulder_prefilter: bool = True
+    # After the month calendar flags a day at/under target, load that day's full
+    # results page to confirm it's the nonstop carrier we want (not a cheaper
+    # partner connection). Turn off for calendar-only (coarser, faster) alerts.
+    confirm_candidates: bool = True
 
 
 class Config(BaseModel):
