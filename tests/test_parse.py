@@ -51,6 +51,12 @@ def test_business_fares_extracted(html_text):
     assert all(d.carrier == "JX" for d in days)
 
 
+def test_no_duplicate_rows(html_text):
+    days = parse_results(_search(), DAY, html_text)
+    keys = [(d.raw["flight"], d.miles, d.raw["stops"], d.taxes_usd) for d in days]
+    assert len(keys) == len(set(keys)), "identical itinerary cards should collapse"
+
+
 def test_nonstop_jx2_business_is_175k(html_text):
     days = parse_results(_search(), DAY, html_text)
     nonstop = [d for d in days if d.nonstop]

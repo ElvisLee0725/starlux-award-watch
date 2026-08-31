@@ -217,6 +217,7 @@ class AlaskaBrowserFetcher(Fetcher):
 def parse_results(search: Search, day: date, html_text: str) -> list[AwardDay]:
     tree = lxml_html.fromstring(html_text)
     out: list[AwardDay] = []
+    seen: set[tuple] = set()  # collapse identical itinerary cards
 
     for grp in tree.cssselect('[data-testid="flight-card-fares-v2"]'):
         labelled = grp.get("aria-labelledby", "")
@@ -248,6 +249,12 @@ def parse_results(search: Search, day: date, html_text: str) -> list[AwardDay]:
             miles = _parse_miles(ptext)
             if miles is None:
                 continue
+
+            dedup_key = (fno_carrier, fno_num, cabin, miles, stops,
+                         _parse_usd(ptext))
+            if dedup_key in seen:
+                continue
+            seen.add(dedup_key)
 
             out.append(AwardDay(
                 search_name=search.name,
