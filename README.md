@@ -7,15 +7,18 @@ flights gets taken fast, so speed of notification is the whole point.
 
 ## Status
 
-**Fetcher works against live Alaska/Atmos data.** Recon nailed down the direct
-results URL and DOM contract; `fetch/browser.py` navigates per date with a warm
-persistent Chrome profile and parses the flight cards. A live probe confirms
-nonstop `JX 2` business at 75k is flagged as a hit and connections / non-JX
-carriers / 175k fares are rejected.
+**Working end to end.** Live-verified: all four route legs parse (`JX 2`
+nonstop TPE↔LAX, `JX 10` nonstop TPE↔ONT), the matcher flags nonstop Starlux
+business ≤ 75k and rejects connections / non-JX / 175k, the SQLite dedup fires
+once then stays quiet, the scheduler loop runs full sweep + far-edge, and a
+Pushover push (emergency priority) lands on the phone. 19 tests.
 
-Left to do: Twilio creds in `.env`; verify `TPE↔ONT` nonstop; tune pacing for
-the full ~330-day sweep (CAPTCHA risk over ~1300 navs); exercise the scheduler
-`loop()`; `Dockerfile` + deploy to the home box.
+Alerts: **Pushover** (Twilio abandoned — trial suspended, upgrade now demands an
+ID upload). Deploy: **macOS LaunchAgent** on an always-on Mac — see
+`deploy/README.md`. Known gap: that Mac isn't online 24/7, so coverage has
+holes; it resumes on wake.
+
+To go live: fill `.env` (`PUSHOVER_*`), then `./deploy/install-macos.sh`.
 
 ## How it works
 
