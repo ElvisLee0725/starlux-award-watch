@@ -46,7 +46,6 @@ def main() -> None:
     _load_dotenv()
 
     if args.test_sms:
-        from .notify import make_notifier
         cfg = load_config()
         res = make_notifier(cfg.alerts.channel, cfg.alerts).send_text(
             "starlux-award-watch: test alert. If you got this, alerts work."
