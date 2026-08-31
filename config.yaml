@@ -75,5 +75,6 @@ browser:
   profile_dir: data/chrome-profile   # warmed by hand once (scripts/recon.py)
   headless: false                    # true on a headless server (needs xvfb)
   nav_timeout_ms: 45000
-  challenge_cooldown_minutes: 30     # pause a search this long after a CAPTCHA
+  challenge_cooldown_minutes: 30     # headless: pause a search this long after a CAPTCHA
+  headed_challenge_wait_s: 180       # headed: wait this long for you to solve it in-window
   confirm_candidates: true           # load a day's full results to confirm nonstop JX

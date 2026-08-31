@@ -69,6 +69,7 @@ def main() -> None:
         request_delay=cfg.poll.request_delay_seconds,
         nav_timeout_ms=cfg.browser.nav_timeout_ms,
         confirm_candidates=cfg.browser.confirm_candidates,
+        headed_challenge_wait_s=cfg.browser.headed_challenge_wait_s,
     )
     store = Store()
     notifier = ConsoleNotifier() if args.dry_run else make_notifier(cfg.alerts.channel, cfg.alerts)

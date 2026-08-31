@@ -91,12 +91,14 @@ class AlaskaBrowserFetcher(Fetcher):
     def __init__(self, profile_dir: str, headless: bool = True,
                  request_delay: tuple[float, float] = (3.0, 8.0),
                  nav_timeout_ms: int = 45_000,
-                 confirm_candidates: bool = True) -> None:
+                 confirm_candidates: bool = True,
+                 headed_challenge_wait_s: int = 180) -> None:
         self.profile_dir = profile_dir
         self.headless = headless
         self.request_delay = request_delay
         self.nav_timeout_ms = nav_timeout_ms
         self.confirm_candidates = confirm_candidates
+        self.headed_challenge_wait_s = headed_challenge_wait_s
         self._pw = None
         self._ctx = None
         self._page = None
@@ -210,14 +212,29 @@ class AlaskaBrowserFetcher(Fetcher):
 
         return parse_results(search, day, page.content())
 
-    def _raise_if_challenged(self, url: str) -> None:
-        page = self._page
+    def _challenged(self) -> bool:
         try:
-            blob = ((page.title() or "") + " " + page.inner_text("body")[:3000]).lower()
+            blob = ((self._page.title() or "") + " "
+                    + self._page.inner_text("body")[:3000]).lower()
         except Exception:
+            return False
+        return "challenge" in blob or any(m in blob for m in _CHALLENGE_MARKERS)
+
+    def _raise_if_challenged(self, url: str) -> None:
+        if not self._challenged():
             return
-        if "challenge" in blob or any(m in blob for m in _CHALLENGE_MARKERS):
-            raise ChallengeRequired(url)
+        # Headed run: give the human a chance to solve it in the visible window
+        # before we bail and make the scheduler wait out a cooldown.
+        if not self.headless and self.headed_challenge_wait_s > 0:
+            log.warning("challenge_waiting", url=url,
+                        wait_s=self.headed_challenge_wait_s)
+            deadline = time.time() + self.headed_challenge_wait_s
+            while self._challenged() and time.time() < deadline:
+                time.sleep(3)
+            if not self._challenged():
+                log.info("challenge_cleared")
+                return
+        raise ChallengeRequired(url)
 
 
 def _next_month(d: date) -> date:
