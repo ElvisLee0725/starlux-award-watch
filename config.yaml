@@ -67,7 +67,7 @@ alerts:
   renotify_after_hours: 12    # still available this many hours later -> alert again
   on_price_drop: true         # a seen date getting cheaper -> alert again
   quiet_hours: null           # e.g. [23, 7] to suppress night alerts (still logged)
-  pushover_priority: 1        # 1 = high (one push, bypasses quiet hours); 2 = emergency (nags until ack); 0 = normal
+  pushover_priority: 0        # 0 = normal (no red banner); 1 = high (red, bypasses quiet hours); 2 = emergency (nags until ack)
   pushover_retry_s: 60        # only used when priority is 2
   pushover_expire_s: 3600     # only used when priority is 2
 

@@ -17,13 +17,24 @@ except Exception:  # pragma: no cover
     _SSL_CTX = None
 
 
+def format_title(day: AwardDay) -> str:
+    # short enough for one line in the iOS notification list
+    return (f"{day.origin}→{day.destination} "
+            f"{day.depart_date:%-d %b} · {day.miles // 1000}k")
+
+
 def format_alert(day: AwardDay) -> str:
     taxes = f"~${day.taxes_usd:.0f}" if day.taxes_usd is not None else "?"
-    seats = f"{day.seats} seat(s) left" if day.seats is not None else "seats: plenty"
+    if day.seats is None:
+        seats = "seats: plenty"
+    elif day.seats == 1:
+        seats = "1 seat left"
+    else:
+        seats = f"{day.seats} seats left"
     flight = day.raw.get("flight", "") if isinstance(day.raw, dict) else ""
     return (
-        f"STARLUX {flight} {day.cabin} — {day.miles:,} mi + {taxes}\n"
-        f"{day.origin}->{day.destination}  {day.depart_date:%a %d %b %Y}\n"
+        f"STARLUX {flight} {day.cabin} - {day.miles:,} mi + {taxes}\n"
+        f"{day.origin}->{day.destination}  {day.depart_date:%a %-d %b %Y}\n"
         f"{seats}\n"
         f"book now: alaskaair.com  (seen {datetime.now():%H:%M})"
     )
@@ -57,7 +68,7 @@ class PushoverNotifier:
             extra = {"retry": self.retry_s, "expire": self.expire_s}
         return self._post(
             message=format_alert(day),
-            title=f"Starlux saver: {day.origin}->{day.destination} {day.depart_date:%d %b}",
+            title=format_title(day),
             priority=self.priority,
             url="https://www.alaskaair.com/",
             url_title="Open Alaska",
