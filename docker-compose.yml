@@ -1,0 +1,11 @@
+services:
+  watch:
+    build: .
+    image: starlux-award-watch
+    restart: unless-stopped
+    env_file: .env                       # PUSHOVER_API_TOKEN / PUSHOVER_USER_KEY
+    volumes:
+      - ./data:/app/data                 # chrome-profile (warm it first) + state.db
+      - ./config.yaml:/app/config.yaml:ro
+    # one-off: warm the profile / clear a CAPTCHA (needs a VNC into Xvfb, see deploy/README.md)
+    # docker compose run --rm watch python scripts/warm.py

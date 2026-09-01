@@ -53,10 +53,14 @@ rejects connections / non-JX / 175k, SQLite dedup fires once then stays quiet,
 the scheduler loop runs full sweep + far-edge, and a Pushover push (emergency
 priority) lands on the phone. 24 tests.
 
-Alerts: **Pushover** (Twilio abandoned — trial suspended, upgrade now demands an
-ID upload). Deploy: **macOS LaunchAgent** on an always-on Mac — see
-`deploy/README.md`. Known gap: that Mac isn't online 24/7, so coverage has
-holes; it resumes on wake.
+Alerts: **Pushover**. A quiet daily **heartbeat** digest also goes out (plus one
+on startup) so silence means "no seats," not "process/Mac dead" — if the digest
+stops, go check.
+
+Deploy: **macOS LaunchAgent** (`./deploy/install-macos.sh`) on an always-on Mac,
+or **Docker** (`Dockerfile` + `docker-compose.yml`, amd64, best on a residential
+IP — not build-verified locally). Details in `deploy/README.md`. Known gap: the
+Mac isn't online 24/7, so coverage has holes; it resumes on wake.
 
 To go live: fill `.env` (`PUSHOVER_*`), then `./deploy/install-macos.sh`.
 

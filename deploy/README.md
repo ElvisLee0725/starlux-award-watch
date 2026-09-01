@@ -62,10 +62,53 @@ python scripts/warm.py     # opens the profile browser; solve the challenge
 
 The agent picks back up on its next cycle.
 
-## Linux (x86, systemd) — later
+## Linux — Docker (amd64)
 
-Install Google Chrome (`google-chrome-stable`), run under `xvfb-run` for a
-virtual display, and wrap `python -m starlux_award_watch` in a `systemd --user`
-service with `Restart=always`. A Dockerfile can bundle Chrome + xvfb; ARM
-(Raspberry Pi) has no Google Chrome build, so it must fall back to Playwright's
-bundled Chromium (`channel` unset) headless.
+`Dockerfile` + `docker-compose.yml` in the repo root. The image installs real
+Google Chrome and runs the loop under `xvfb-run` (headed Chrome, virtual
+display). `data/` is a volume (Chrome profile + `state.db`); `.env` and
+`config.yaml` are mounted.
+
+```bash
+cp .env.example .env && $EDITOR .env       # PUSHOVER_API_TOKEN / PUSHOVER_USER_KEY
+mkdir -p data
+docker compose build
+docker compose up -d
+docker compose logs -f
+```
+
+**IP reputation matters most here.** A home box / mini-PC on a residential
+connection is fine. A cloud datacenter IP gets Akamai-challenged constantly with
+no human at the console to clear it — you'd need a residential proxy, which this
+image doesn't set up.
+
+**Clearing a CAPTCHA in the container:** no display is attached, so
+`scripts/warm.py`'s window is invisible. Options: (a) add `x11vnc` to the image
+and VNC into the Xvfb display, (b) warm `data/chrome-profile/` on a desktop and
+copy it onto the host's `data/` volume, (c) rely on residential-IP challenges
+being rare and the heartbeat telling you when one is stuck.
+
+**Raspberry Pi (ARM):** no `google-chrome-stable` build. Swap to Playwright's
+bundled Chromium — in `fetch/browser.py` drop `channel="chrome"`, and in the
+Dockerfile replace the Chrome apt install with `RUN playwright install
+--with-deps chromium`. Untested.
+
+## systemd (no Docker)
+
+Install `google-chrome-stable`, then a `~/.config/systemd/user/` unit running
+`xvfb-run -a .venv/bin/python -m starlux_award_watch` with `Restart=always`.
+
+## The heartbeat
+
+However you run it, the loop sends a quiet Pushover digest every
+`alerts.heartbeat_hours` (default 24) plus one on startup:
+
+```
+still watching.
+last full sweep: 2h ago
+in the last 26h: 4 sweeps, 11 passes, 2 hits, 0 CAPTCHAs, 0 errors
+routes: 4
+```
+
+If that digest stops arriving, the process or the host is down — that's your
+signal to check. `heartbeat_hours: 0` disables it.
