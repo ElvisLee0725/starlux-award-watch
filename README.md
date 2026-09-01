@@ -5,6 +5,45 @@ saver space** on `TPE ↔ LAX` and `TPE ↔ ONT`, and **pushes your phone** the
 moment a day prices at or below your target (75,000 miles). The lone saver seat
 on these flights gets taken fast, so speed of notification is the whole point.
 
+## Running it — the commands you keep forgetting
+
+Always run from the repo root (`~/claude-projects/starlux-award-watch`). No venv
+activation needed — call the venv's Python by path:
+
+```bash
+# ONE sweep of all 4 routes, then exit. Shows the Chrome window.
+.venv/bin/python -m starlux_award_watch --once --headed
+
+# Keep watching forever (full sweep ~every 2h, far-edge ~every 20min). Ctrl-C to stop.
+.venv/bin/python -m starlux_award_watch --headed
+
+# Send one test push and exit (checks Pushover works).
+.venv/bin/python -m starlux_award_watch --test-sms
+
+# Run it as an always-on background service (starts at login, restarts on crash).
+./deploy/install-macos.sh          # see deploy/README.md; ./deploy/uninstall-macos.sh to remove
+```
+
+**What you'll see / get:**
+
+- Terminal prints one `calendar_scan …` line per route as it finishes that
+  route's months (with how many candidate days it flagged).
+- A **Pushover push only on a hit** — a day where the nonstop JX flight has
+  business ≤ 75,000 mi. **No hits → no notification**, it just returns to the
+  prompt. There is no "sweep finished" ping.
+- Drop `--headed` to run with no visible window.
+
+**If you get a "CAPTCHA" push** (only happens headless / if you're away):
+
+```bash
+.venv/bin/python scripts/warm.py   # opens the profile browser — solve it once
+```
+
+A headed run instead waits up to 3 minutes for you to solve it in the window,
+then carries on by itself.
+
+Edit routes, target miles, cadence, and alert priority in **`config.yaml`**.
+
 ## Status
 
 **Working end to end.** Live-verified: the month-calendar scan flags candidate
@@ -40,31 +79,38 @@ To go live: fill `.env` (`PUSHOVER_*`), then `./deploy/install-macos.sh`.
    frequent `far_edge` passes over the newest bookable dates (where the saver
    seat first appears). A full 4-route × 331-day sweep is ~50 page loads.
 
-## Setup
+## First-time setup (already done on this machine)
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -e ".[dev,browser]"
-cp .env.example .env         # fill in Twilio creds
-$EDITOR config.yaml          # routes, targets, cadence
-```
-
-## Run
-
-```bash
-python -m starlux_award_watch --once --dry-run   # one sweep, print instead of SMS
-python -m starlux_award_watch                     # the real loop
+python3 -m venv .venv
+.venv/bin/pip install -e .
+.venv/bin/playwright install chromium
+cp .env.example .env            # fill in PUSHOVER_API_TOKEN + PUSHOVER_USER_KEY
+# warm the browser profile once (clears the initial Akamai CAPTCHA):
+.venv/bin/python scripts/warm.py
 ```
 
 ## Deploy
 
-Target is a small always-on cloud VM (Docker). `Dockerfile` TBD once fetch works.
-Running on a laptop only checks while the laptop is awake and the process is up —
-not suitable for catching space that appears overnight.
+Built for a macOS **LaunchAgent** on an always-on Mac — `./deploy/install-macos.sh`,
+details in `deploy/README.md`. Linux (systemd + Chrome + xvfb) is sketched there
+too. Running on a laptop only checks while it's awake and online.
+
+## CLI flags
+
+| flag | effect |
+|---|---|
+| `--once` | one full sweep, then exit (default is loop forever) |
+| `--headed` | show the Chrome window |
+| `--dry-run` | print alerts instead of pushing |
+| `--test-sms` | send one test push via the configured channel, exit |
+| `--route SUBSTR` | only run searches whose name contains SUBSTR |
+| `--days N` | cap the scan to the next N days (testing) |
+| `--max-cycles N` | run the loop for N cycles then exit (testing) |
 
 ## Notes
 
-- Not affiliated with Alaska Airlines or Starlux. For personal use; respect the
-  sites' terms and keep polling gentle (`request_delay_seconds`, `jitter_pct`).
-- Alaska's partner booking window is ~330 days; occasionally Starlux loads closer
-  to 350. `window.max_days_ahead` controls how far we probe.
+- Not affiliated with Alaska Airlines or Starlux. Personal use; keep polling
+  gentle (`poll.request_delay_seconds`, `poll.jitter_pct`).
+- Alaska's partner booking window is ~330 days; `window.max_days_ahead` controls
+  how far ahead the calendar scan goes.
