@@ -29,6 +29,10 @@ CREATE TABLE IF NOT EXISTS alerts (
     sent_at       REAL NOT NULL
 );
 CREATE INDEX IF NOT EXISTS alerts_k_time ON alerts (k, sent_at DESC);
+CREATE TABLE IF NOT EXISTS meta (
+    k  TEXT PRIMARY KEY,
+    v  TEXT NOT NULL
+);
 """
 
 
@@ -88,3 +92,21 @@ class Store:
             (self._k(day), day.miles, time.time()),
         )
         self.db.commit()
+
+    # -- meta (heartbeat state + counters) -----------------------------------
+    def get_meta(self, k: str, default: str | None = None) -> str | None:
+        row = self.db.execute("SELECT v FROM meta WHERE k=?", (k,)).fetchone()
+        return row[0] if row else default
+
+    def set_meta(self, k: str, v) -> None:
+        self.db.execute(
+            "INSERT INTO meta (k, v) VALUES (?, ?) "
+            "ON CONFLICT(k) DO UPDATE SET v=excluded.v",
+            (k, str(v)),
+        )
+        self.db.commit()
+
+    def bump_meta(self, k: str, n: int = 1) -> int:
+        new = int(self.get_meta(k, "0") or "0") + n
+        self.set_meta(k, new)
+        return new

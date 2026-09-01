@@ -75,13 +75,16 @@ class PushoverNotifier:
             **extra,
         )
 
-    def send_text(self, body: str) -> str:
-        return self._post(message=body, title="starlux-award-watch", priority=0)
+    def send_text(self, body: str, priority: int = 0) -> str:
+        return self._post(message=body, title="starlux-award-watch",
+                          priority=priority)
 
     def _post(self, **fields) -> str:
         data = {"token": self.token, "user": self.user}
         if self.device:
             data["device"] = self.device
+        # priority=0 is Pushover's default but must be sent explicitly to
+        # override; -1/-2 are valid too, so only drop None.
         data.update({k: v for k, v in fields.items() if v is not None})
         payload = urllib.parse.urlencode(data).encode()
         with urllib.request.urlopen(self.API, payload, timeout=15,
@@ -107,7 +110,7 @@ class SmsNotifier:
     def send(self, day: AwardDay) -> str:
         return self.send_text(format_alert(day))
 
-    def send_text(self, body: str) -> str:
+    def send_text(self, body: str, priority: int = 0) -> str:  # SMS has no priority
         return self.client.messages.create(
             body=body, from_=self.from_, to=self.to).sid
 
@@ -118,8 +121,9 @@ class ConsoleNotifier:
     def send(self, day: AwardDay) -> str:
         return self.send_text(format_alert(day))
 
-    def send_text(self, body: str) -> str:
-        print("=== ALERT ===\n" + body + "\n=============")
+    def send_text(self, body: str, priority: int = 0) -> str:
+        tag = "ALERT" if priority >= 0 else "note"
+        print(f"=== {tag} ===\n" + body + "\n" + "=" * (len(tag) + 8))
         return "console"
 
 

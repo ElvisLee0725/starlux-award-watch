@@ -70,6 +70,8 @@ alerts:
   pushover_priority: 0        # 0 = normal (no red banner); 1 = high (red, bypasses quiet hours); 2 = emergency (nags until ack)
   pushover_retry_s: 60        # only used when priority is 2
   pushover_expire_s: 3600     # only used when priority is 2
+  heartbeat_hours: 24         # send a quiet "still alive" digest this often (0 = off); also one on startup
+  heartbeat_priority: -1      # -1 = silent (shows in app, no sound)
 
 browser:
   profile_dir: data/chrome-profile   # warmed by hand once (scripts/recon.py)

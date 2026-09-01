@@ -51,6 +51,9 @@ class Alerts(BaseModel):
     pushover_priority: int = 2
     pushover_retry_s: int = 60
     pushover_expire_s: int = 3600
+    # "still alive" digest so silence means "no seats", not "process/Mac dead".
+    heartbeat_hours: float = 24     # 0 = off; also sends one on startup
+    heartbeat_priority: int = -1    # -1 = quiet (no sound/vibration)
 
 
 class Browser(BaseModel):
