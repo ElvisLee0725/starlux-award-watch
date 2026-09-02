@@ -8,20 +8,31 @@ on these flights gets taken fast, so speed of notification is the whole point.
 ## Running it — the commands you keep forgetting
 
 Always run from the repo root (`~/claude-projects/starlux-award-watch`). No venv
-activation needed — call the venv's Python by path:
+activation needed — call the venv's Python by path.
+
+**The normal way — one sweep a day, by hand:**
 
 ```bash
-# ONE sweep of all 4 routes, then exit. Shows the Chrome window.
 .venv/bin/python -m starlux_award_watch --once --headed
+```
 
-# Keep watching forever (full sweep ~every 2h, far-edge ~every 20min). Ctrl-C to stop.
-.venv/bin/python -m starlux_award_watch --headed
+Sweeps all 4 routes (~10–20 min), pushes you for any ≤75k nonstop JX business
+day, then exits. Run it while you're at the keyboard so you can clear a CAPTCHA
+in the window if one appears. This is the intended workflow — the continuous
+loop hits Alaska often enough to get CAPTCHA'd when nobody's watching.
 
+**Other modes:**
+
+```bash
 # Send one test push and exit (checks Pushover works).
 .venv/bin/python -m starlux_award_watch --test-sms
 
-# Run it as an always-on background service (starts at login, restarts on crash).
-./deploy/install-macos.sh          # see deploy/README.md; ./deploy/uninstall-macos.sh to remove
+# Continuous loop (full sweep ~every 2h, far-edge ~every 20min) + daily heartbeat.
+# Only worth it if you'll clear the occasional CAPTCHA. Ctrl-C to stop.
+.venv/bin/python -m starlux_award_watch --headed
+
+# Install that loop as an always-on service. Same CAPTCHA caveat.
+./deploy/install-macos.sh          # deploy/README.md; ./deploy/uninstall-macos.sh to remove
 ```
 
 **What you'll see / get:**
