@@ -44,6 +44,68 @@ searches:
     passengers: 1
     nonstop_only: true
 
+  # SFO and SEA: same 75k saver level as LAX/ONT.
+  - name: "TPE->SFO Starlux business (saver)"
+    origin: TPE
+    destination: SFO
+    carrier: JX
+    cabin: business
+    max_miles: 75000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  - name: "SFO->TPE Starlux business (saver)"
+    origin: SFO
+    destination: TPE
+    carrier: JX
+    cabin: business
+    max_miles: 75000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  - name: "TPE->SEA Starlux business (saver)"
+    origin: TPE
+    destination: SEA
+    carrier: JX
+    cabin: business
+    max_miles: 75000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  - name: "SEA->TPE Starlux business (saver)"
+    origin: SEA
+    destination: TPE
+    carrier: JX
+    cabin: business
+    max_miles: 75000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  # PHX: its lowest business one-way is 85k, so target that instead of 75k.
+  - name: "TPE->PHX Starlux business (85k)"
+    origin: TPE
+    destination: PHX
+    carrier: JX
+    cabin: business
+    max_miles: 85000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
+  - name: "PHX->TPE Starlux business (85k)"
+    origin: PHX
+    destination: TPE
+    carrier: JX
+    cabin: business
+    max_miles: 85000
+    max_taxes_usd: 200
+    passengers: 1
+    nonstop_only: true
+
 # How far ahead to scan. Alaska opens partner award space ~330 days out;
 # occasionally Starlux loads closer to 350. We probe to max_days_ahead and
 # stop early on the first "no schedule" response.
