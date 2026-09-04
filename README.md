@@ -5,35 +5,31 @@ saver space** on `TPE ↔ LAX` and `TPE ↔ ONT`, and **pushes your phone** the
 moment a day prices at or below your target (75,000 miles). The lone saver seat
 on these flights gets taken fast, so speed of notification is the whole point.
 
-## Running it — the commands you keep forgetting
+## Running it — use `make`
 
-Always run from the repo root (`~/claude-projects/starlux-award-watch`). No venv
-activation needed — call the venv's Python by path.
+From the repo root. `make` auto-creates the venv on first use; you never touch
+`.venv/` directly.
 
-**The normal way — one sweep a day, by hand:**
-
-```bash
-.venv/bin/python -m starlux_award_watch --once --headed
+```
+make setup      one-time: venv + deps + Chromium, and create .env
+make warm       clear an Akamai CAPTCHA in the profile browser
+make run        THE DAILY RUN — one sweep of all routes, visible window
+make test-push  send one test Pushover notification
+make loop       run continuously (full sweep ~2h, far-edge ~20m) + heartbeat
+make test       run the test suite
+make            list all targets
 ```
 
-Sweeps all 4 routes (~10–20 min), pushes you for any ≤75k nonstop JX business
-day, then exits. Run it while you're at the keyboard so you can clear a CAPTCHA
-in the window if one appears. This is the intended workflow — the continuous
-loop hits Alaska often enough to get CAPTCHA'd when nobody's watching.
+**The normal workflow is `make run` once a day**, while you're at the keyboard so
+you can solve a CAPTCHA if one appears. `make loop` (or the LaunchAgent in
+`deploy/`) runs forever but hits Alaska often enough to get CAPTCHA'd when
+nobody's watching.
 
-**Other modes:**
+> First time only: macOS gates `make` behind the Xcode licence —
+> `sudo xcodebuild -license accept`. Or `brew install make` and use `gmake`.
 
-```bash
-# Send one test push and exit (checks Pushover works).
-.venv/bin/python -m starlux_award_watch --test-sms
-
-# Continuous loop (full sweep ~every 2h, far-edge ~every 20min) + daily heartbeat.
-# Only worth it if you'll clear the occasional CAPTCHA. Ctrl-C to stop.
-.venv/bin/python -m starlux_award_watch --headed
-
-# Install that loop as an always-on service. Same CAPTCHA caveat.
-./deploy/install-macos.sh          # deploy/README.md; ./deploy/uninstall-macos.sh to remove
-```
+Under the hood every target just runs `.venv/bin/python -m starlux_award_watch …`
+with the right flags — you can still call that directly if you prefer.
 
 **What you'll see / get:**
 
