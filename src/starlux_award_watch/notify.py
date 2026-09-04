@@ -17,13 +17,22 @@ except Exception:  # pragma: no cover
     _SSL_CTX = None
 
 
+_DEFAULT_COLOR = "#8b8d98"  # grey, for an unmapped route
+
+
+def route_endpoint(day: AwardDay) -> str:
+    """The airport that isn't the hub (TPE) — how routes are keyed for colour."""
+    return day.origin if day.origin.upper() != "TPE" else day.destination
+
+
 def format_title(day: AwardDay) -> str:
     # short enough for one line in the iOS notification list
     return (f"{day.origin}→{day.destination} "
             f"{day.depart_date:%-d %b} · {day.miles // 1000}k")
 
 
-def format_alert(day: AwardDay) -> str:
+def format_alert(day: AwardDay, *, html: bool = False,
+                 route_colors: dict[str, str] | None = None) -> str:
     taxes = f"~${day.taxes_usd:.0f}" if day.taxes_usd is not None else "?"
     if day.seats is None:
         seats = "seats: plenty"
@@ -32,9 +41,15 @@ def format_alert(day: AwardDay) -> str:
     else:
         seats = f"{day.seats} seats left"
     flight = day.raw.get("flight", "") if isinstance(day.raw, dict) else ""
+
+    route = f"{day.origin}->{day.destination}"
+    if html:
+        color = (route_colors or {}).get(route_endpoint(day), _DEFAULT_COLOR)
+        route = f'<b><font color="{color}">{route}</font></b>'
+
     return (
         f"STARLUX {flight} {day.cabin} - {day.miles:,} mi + {taxes}\n"
-        f"{day.origin}->{day.destination}  {day.depart_date:%a %-d %b %Y}\n"
+        f"{route}  {day.depart_date:%a %-d %b %Y}\n"
         f"{seats}\n"
         f"book now: alaskaair.com  (seen {datetime.now():%H:%M})"
     )
@@ -54,21 +69,24 @@ class PushoverNotifier:
     API = "https://api.pushover.net/1/messages.json"
 
     def __init__(self, priority: int = 2, retry_s: int = 60,
-                 expire_s: int = 3600) -> None:
+                 expire_s: int = 3600,
+                 route_colors: dict[str, str] | None = None) -> None:
         self.token = os.environ["PUSHOVER_API_TOKEN"]
         self.user = os.environ["PUSHOVER_USER_KEY"]
         self.device = os.environ.get("PUSHOVER_DEVICE") or None
         self.priority = priority          # 2 = emergency (retries until acked)
         self.retry_s = retry_s
         self.expire_s = expire_s
+        self.route_colors = route_colors or {}
 
     def send(self, day: AwardDay) -> str:
         extra = {}
         if self.priority == 2:
             extra = {"retry": self.retry_s, "expire": self.expire_s}
         return self._post(
-            message=format_alert(day),
+            message=format_alert(day, html=True, route_colors=self.route_colors),
             title=format_title(day),
+            html=1,
             priority=self.priority,
             url="https://www.alaskaair.com/",
             url_title="Open Alaska",
@@ -133,5 +151,6 @@ def make_notifier(channel: str, alerts=None):
             return PushoverNotifier()
         return PushoverNotifier(priority=alerts.pushover_priority,
                                 retry_s=alerts.pushover_retry_s,
-                                expire_s=alerts.pushover_expire_s)
+                                expire_s=alerts.pushover_expire_s,
+                                route_colors=dict(alerts.route_colors))
     return {"sms": SmsNotifier, "console": ConsoleNotifier}[channel]()

@@ -134,6 +134,12 @@ alerts:
   pushover_expire_s: 3600     # only used when priority is 2
   heartbeat_hours: 24         # send a quiet "still alive" digest this often (0 = off); also one on startup
   heartbeat_priority: -1      # -1 = silent (shows in app, no sound)
+  route_colors:               # colour the route line in the push body, keyed by the non-TPE airport
+    LAX: "#e5484d"            # red
+    ONT: "#f76b15"            # orange
+    SFO: "#0091ff"            # blue
+    SEA: "#30a46c"            # green
+    PHX: "#f5a623"            # amber
 
 browser:
   profile_dir: data/chrome-profile   # warmed by hand once (scripts/recon.py)

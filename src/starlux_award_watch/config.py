@@ -54,6 +54,11 @@ class Alerts(BaseModel):
     # "still alive" digest so silence means "no seats", not "process/Mac dead".
     heartbeat_hours: float = 24     # 0 = off; also sends one on startup
     heartbeat_priority: int = -1    # -1 = quiet (no sound/vibration)
+    # Colour the route line in the Pushover body, keyed by the non-TPE airport.
+    route_colors: dict[str, str] = Field(default_factory=lambda: {
+        "LAX": "#e5484d", "ONT": "#f76b15", "SFO": "#0091ff",
+        "SEA": "#30a46c", "PHX": "#f5a623",
+    })
 
 
 class Browser(BaseModel):
