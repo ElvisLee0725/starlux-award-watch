@@ -25,8 +25,16 @@ warm: $(PY) ## open the profile browser to clear an Akamai CAPTCHA
 	$(PY) scripts/warm.py
 
 .PHONY: run
-run: $(PY) ## THE DAILY RUN: one sweep of all routes, visible window
+run: $(PY) ## THE DAILY RUN: one full sweep of all routes, visible window
 	$(PY) -m starlux_award_watch --once --headed
+
+.PHONY: run-near
+run-near: $(PY) ## quick check: nearest 30 bookable days only (~3-5 min)
+	$(PY) -m starlux_award_watch --once --headed --days 30
+
+.PHONY: run-far
+run-far: $(PY) ## quick check: farthest 30 bookable days only, e.g. newly-opened dates (~3-5 min)
+	$(PY) -m starlux_award_watch --once --headed --far 30
 
 .PHONY: loop
 loop: $(PY) ## run continuously (full sweep ~2h, far-edge ~20m) + daily heartbeat

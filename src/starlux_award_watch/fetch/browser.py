@@ -232,6 +232,17 @@ class AlaskaBrowserFetcher(Fetcher):
             while self._challenged() and time.time() < deadline:
                 time.sleep(3)
             if not self._challenged():
+                # Akamai's redirect-back after solving doesn't reliably honor the
+                # original query string (we've seen it settle on a default month
+                # instead of the requested CM=/FareType=). Force a clean reload
+                # of the exact URL rather than trusting whatever's on screen.
+                try:
+                    self._page.goto(url, wait_until="domcontentloaded",
+                                    timeout=self.nav_timeout_ms)
+                except Exception as exc:  # noqa: BLE001
+                    log.warning("post_challenge_reload_failed", url=url, error=str(exc))
+                if self._challenged():
+                    raise ChallengeRequired(url)
                 log.info("challenge_cleared")
                 return
         raise ChallengeRequired(url)

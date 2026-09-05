@@ -17,6 +17,15 @@ from .store import Store
 log = structlog.get_logger()
 
 
+def far_range(cfg, n: int, today: dt.date | None = None) -> tuple[dt.date, dt.date]:
+    """The last N bookable days of the window, for --far N."""
+    today = today or dt.date.today()
+    hi = today + dt.timedelta(days=cfg.window.max_days_ahead)
+    earliest = today + dt.timedelta(days=cfg.window.min_days_ahead)
+    lo = max(earliest, hi - dt.timedelta(days=n - 1))
+    return lo, hi
+
+
 def _load_dotenv(path: str = ".env") -> None:
     if not os.path.exists(path):
         return
@@ -34,7 +43,10 @@ def main() -> None:
     ap.add_argument("--dry-run", action="store_true", help="never send SMS; print instead")
     ap.add_argument("--headed", action="store_true", help="force a visible browser window")
     ap.add_argument("--days", type=int, metavar="N",
-                    help="cap the scan to the next N days (for testing)")
+                    help="quick scan: only the nearest N days of the window")
+    ap.add_argument("--far", type=int, metavar="N",
+                    help="quick scan: only the farthest N days of the window "
+                         "(e.g. --far 30 = the last 30 bookable days)")
     ap.add_argument("--route", metavar="SUBSTR",
                     help="only run searches whose name contains SUBSTR")
     ap.add_argument("--test-sms", action="store_true",
@@ -52,6 +64,9 @@ def main() -> None:
         )
         log.info("test_alert_sent", channel=cfg.alerts.channel, result=res)
         return
+
+    if args.days and args.far:
+        raise SystemExit("--days and --far are mutually exclusive")
 
     cfg = load_config()
 
@@ -77,10 +92,15 @@ def main() -> None:
 
     try:
         if args.once:
-            lo, hi = runner._full_range()
-            log.info("once", start=str(lo), end=str(hi),
+            if args.far:
+                lo, hi = far_range(cfg, args.far)
+                label = f"far-{args.far}"
+            else:
+                lo, hi = runner._full_range()
+                label = "once"
+            log.info("once", label=label, start=str(lo), end=str(hi),
                      searches=[s.name for s in cfg.searches])
-            runner.run_pass(lo, hi, "once")
+            runner.run_pass(lo, hi, label)
         else:
             runner.loop(max_cycles=args.max_cycles)
     finally:
