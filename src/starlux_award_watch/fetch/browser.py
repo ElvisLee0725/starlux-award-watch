@@ -201,7 +201,7 @@ class AlaskaBrowserFetcher(Fetcher):
         self._raise_if_challenged(url)
 
         try:
-            page.wait_for_selector('[data-testid="flight-card-fares-v2"]', timeout=20_000)
+            page.wait_for_selector('[data-testid="flight-card-fare-tiles"]', timeout=20_000)
         except PWTimeout:
             self._raise_if_challenged(url)
             body = (page.inner_text("body")[:2000] if page else "").lower()
@@ -297,7 +297,7 @@ def parse_results(search: Search, day: date, html_text: str) -> list[AwardDay]:
     out: list[AwardDay] = []
     seen: set[tuple] = set()  # collapse identical itinerary cards
 
-    for grp in tree.cssselect('[data-testid="flight-card-fares-v2"]'):
+    for grp in tree.cssselect('[data-testid="flight-card-fare-tiles"]'):
         labelled = grp.get("aria-labelledby", "")
         idx = labelled.rsplit("-", 1)[-1] if labelled else None
         if idx is None:
