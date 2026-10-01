@@ -41,6 +41,9 @@ def format_alert(day: AwardDay, *, html: bool = False,
     else:
         seats = f"{day.seats} seats left"
     flight = day.raw.get("flight", "") if isinstance(day.raw, dict) else ""
+    dep = day.raw.get("dep") if isinstance(day.raw, dict) else None
+    arr = day.raw.get("arr") if isinstance(day.raw, dict) else None
+    times = f"{dep} → {arr}\n" if dep and arr else ""
 
     route = f"{day.origin}->{day.destination}"
     if html:
@@ -50,6 +53,7 @@ def format_alert(day: AwardDay, *, html: bool = False,
     return (
         f"STARLUX {flight} {day.cabin} - {day.miles:,} mi + {taxes}\n"
         f"{route}  {day.depart_date:%a %-d %b %Y}\n"
+        f"{times}"
         f"{seats}\n"
         f"book now: alaskaair.com  (seen {datetime.now():%H:%M})"
     )

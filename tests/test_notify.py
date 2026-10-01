@@ -25,6 +25,20 @@ def test_plain_body_has_no_html():
     assert "<font" not in body and "TPE->SFO" in body
 
 
+def test_body_includes_departure_and_arrival_time_when_known():
+    day = AwardDay(search_name="t", origin="TPE", destination="SFO",
+                   depart_date=date(2027, 7, 19), cabin="business", carrier="JX",
+                   miles=75000, taxes_usd=26.0, seats=1, nonstop=True,
+                   raw={"flight": "JX 12", "dep": "8:05 pm", "arr": "5:05 pm"})
+    body = format_alert(day)
+    assert "8:05 pm → 5:05 pm" in body
+
+
+def test_body_omits_time_line_when_unknown():
+    body = format_alert(_day())  # raw has no dep/arr keys
+    assert "→" not in body
+
+
 def test_html_body_colours_route_line_by_endpoint():
     body = format_alert(_day("SFO", "TPE"), html=True, route_colors=COLORS)
     assert '<font color="#0091ff">SFO->TPE</font>' in body
