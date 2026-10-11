@@ -39,6 +39,9 @@ class Runner:
         self.fetcher = fetcher
         self.store = store
         self.notifier = notifier
+        # per-pass tallies, read by pass_summary() after a one-shot run
+        self.pass_hits: list[AwardDay] = []
+        self.pass_errors = 0
 
     # -- date ranges -------------------------------------------------------
     def _full_range(self) -> tuple[date, date]:
@@ -57,6 +60,8 @@ class Runner:
     def run_pass(self, start: date, end: date, label: str) -> bool:
         """Returns True if the pass completed without a CAPTCHA abort."""
         self.store.bump_meta("hb_passes")
+        self.pass_hits = []
+        self.pass_errors = 0
         for i, search in enumerate(self.cfg.searches):
             if i:  # brief gap between searches; per-page pacing lives in the fetcher
                 time.sleep(random.uniform(*self.cfg.poll.request_delay_seconds))
@@ -79,6 +84,7 @@ class Runner:
                 return False  # abort this pass; next tick starts fresh
             except Exception as exc:  # noqa: BLE001 — log and keep other searches alive
                 self.store.bump_meta("hb_errors")
+                self.pass_errors += 1
                 log.warning("fetch_failed", search=search.name, pass_=label, error=str(exc))
                 continue
 
@@ -86,12 +92,25 @@ class Runner:
                 self.store.record_seen(day)
 
             for hit in filter_hits(search, days):
+                self.pass_hits.append(hit)
                 self._maybe_alert(hit)
 
         if label == "full":
             self.store.set_meta("last_sweep_ok", time.time())
             self.store.bump_meta("hb_full_sweeps")
         return True
+
+    def pass_summary(self, label: str, start: date, end: date, ok: bool) -> str:
+        """One-line "search finished" push body for one-shot runs."""
+        n = len(self.pass_hits)
+        found = (f"{n} saving ticket{'s' if n != 1 else ''} found" if n
+                 else "no saving tickets found")
+        lines = [f"search finished ({label}, {start} .. {end}): {found}."]
+        if not ok:
+            lines.append("aborted early by a CAPTCHA — results are partial.")
+        if self.pass_errors:
+            lines.append(f"{self.pass_errors} route(s) failed to fetch.")
+        return "\n".join(lines)
 
     def _maybe_alert(self, hit: AwardDay) -> None:
         if not self.store.should_alert(

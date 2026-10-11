@@ -126,7 +126,13 @@ def main() -> None:
                 label = "once"
             log.info("once", label=label, start=str(lo), end=str(hi),
                      searches=[s.name for s in cfg.searches])
-            runner.run_pass(lo, hi, label)
+            ok = runner.run_pass(lo, hi, label)
+            summary = runner.pass_summary(label, lo, hi, ok)
+            log.info("once_done", hits=len(runner.pass_hits), ok=ok)
+            try:
+                notifier.send_text(summary, priority=0)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("summary_failed", error=str(exc))
         else:
             runner.loop(max_cycles=args.max_cycles)
     finally:

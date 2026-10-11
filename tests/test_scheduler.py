@@ -95,3 +95,19 @@ def test_quiet_hours_wraps_midnight(tmp_path):
         assert r._in_quiet_hours() is True
     with patch.object(_t, "localtime", lambda: _t.struct_time((2026, 1, 1, 12, 0, 0, 0, 1, 0))):
         assert r._in_quiet_hours() is False
+
+
+def test_pass_summary_counts_hits(tmp_path):
+    d = date.today() + timedelta(days=30)
+    r, fetch, note, store = _runner(tmp_path, [_hit(d), _hit(d + timedelta(days=1))])
+    lo, hi = r._full_range()
+    r.run_pass(lo, hi, "once")
+    assert "2 saving tickets found" in r.pass_summary("once", lo, hi, True)
+    fetch.rows = [_hit(d)]                 # already alerted, but still counts
+    r.run_pass(lo, hi, "once")
+    assert "1 saving ticket found" in r.pass_summary("once", lo, hi, True)
+    fetch.rows = []
+    r.run_pass(lo, hi, "once")
+    msg = r.pass_summary("once", lo, hi, False)
+    assert "no saving tickets found" in msg and "CAPTCHA" in msg
+    store.close()
