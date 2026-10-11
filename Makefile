@@ -36,6 +36,11 @@ run-near: $(PY) ## quick check: nearest 30 bookable days only (~3-5 min)
 run-far: $(PY) ## quick check: farthest 30 bookable days only, e.g. newly-opened dates (~3-5 min)
 	$(PY) -m starlux_award_watch --once --headed --far 30
 
+.PHONY: run-month
+run-month: $(PY) ## quick check: one calendar month only, e.g. make run-month M=12 (December)
+	@test -n "$(M)" || (echo "usage: make run-month M=<1-12>" && exit 1)
+	$(PY) -m starlux_award_watch --once --headed --month $(M)
+
 .PHONY: loop
 loop: $(PY) ## run continuously (full sweep ~2h, far-edge ~20m) + daily heartbeat
 	$(PY) -m starlux_award_watch --headed

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import calendar
 import datetime as dt
 import os
 
@@ -26,6 +27,22 @@ def far_range(cfg, n: int, today: dt.date | None = None) -> tuple[dt.date, dt.da
     return lo, hi
 
 
+def month_range(cfg, month: int, today: dt.date | None = None) -> tuple[dt.date, dt.date]:
+    """The next occurrence of calendar month 1-12 that is still bookable, clipped
+    to the window, for --month M.  The current month means its remaining days."""
+    today = today or dt.date.today()
+    earliest = today + dt.timedelta(days=cfg.window.min_days_ahead)
+    latest = today + dt.timedelta(days=cfg.window.max_days_ahead)
+    year = earliest.year if month >= earliest.month else earliest.year + 1
+    first = dt.date(year, month, 1)
+    last = dt.date(year, month, calendar.monthrange(year, month)[1])
+    lo, hi = max(earliest, first), min(latest, last)
+    if lo > hi:
+        raise ValueError(f"{calendar.month_name[month]} {year} is outside the bookable "
+                         f"window ({earliest} .. {latest})")
+    return lo, hi
+
+
 def _load_dotenv(path: str = ".env") -> None:
     if not os.path.exists(path):
         return
@@ -47,6 +64,9 @@ def main() -> None:
     ap.add_argument("--far", type=int, metavar="N",
                     help="quick scan: only the farthest N days of the window "
                          "(e.g. --far 30 = the last 30 bookable days)")
+    ap.add_argument("--month", type=int, metavar="M", choices=range(1, 13),
+                    help="quick scan: only calendar month M (1-12), its next bookable "
+                         "occurrence (e.g. --month 12 = December); implies --once")
     ap.add_argument("--route", metavar="SUBSTR",
                     help="only run searches whose name contains SUBSTR")
     ap.add_argument("--test-sms", action="store_true",
@@ -65,8 +85,8 @@ def main() -> None:
         log.info("test_alert_sent", channel=cfg.alerts.channel, result=res)
         return
 
-    if args.days and args.far:
-        raise SystemExit("--days and --far are mutually exclusive")
+    if sum(bool(x) for x in (args.days, args.far, args.month)) > 1:
+        raise SystemExit("--days, --far and --month are mutually exclusive")
 
     cfg = load_config()
 
@@ -91,8 +111,14 @@ def main() -> None:
     runner = Runner(cfg, fetcher, store, notifier)
 
     try:
-        if args.once:
-            if args.far:
+        if args.once or args.month:
+            if args.month:
+                try:
+                    lo, hi = month_range(cfg, args.month)
+                except ValueError as exc:
+                    raise SystemExit(str(exc)) from None
+                label = f"month-{args.month}"
+            elif args.far:
                 lo, hi = far_range(cfg, args.far)
                 label = f"far-{args.far}"
             else:

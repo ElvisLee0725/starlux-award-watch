@@ -17,6 +17,7 @@ make warm       clear an Akamai CAPTCHA in the profile browser
 make run        THE DAILY RUN — one full sweep of all routes (~30-40 min), visible window
 make run-near   quick check: nearest 30 bookable days only (~3-5 min)
 make run-far    quick check: farthest 30 bookable days only, e.g. newly-opened dates (~3-5 min)
+make run-month M=12  quick check: one calendar month only (12 = December)
 make test-push  send one test Pushover notification
 make loop       run continuously (full sweep ~2h, far-edge ~20m) + heartbeat
 make test       run the test suite
@@ -46,6 +47,9 @@ with the right flags — you can still call that directly if you prefer.
 - `--days N` / `--far N` (or `make run-near` / `make run-far`) scan only the
   nearest or farthest N bookable days instead of the whole window — a fast
   spot-check instead of the full sweep.
+- `--month M` (or `make run-month M=12`) scans only calendar month M (1-12) —
+  its next bookable occurrence, so in October `--month 3` means next March and
+  `--month 10` means the rest of this October. One month per run.
 
 **If you get a "CAPTCHA" push** (only happens headless / if you're away):
 
@@ -130,6 +134,7 @@ too. Running on a laptop only checks while it's awake and online.
 | `--route SUBSTR` | only run searches whose name contains SUBSTR |
 | `--days N` | quick scan: only the nearest N days of the window |
 | `--far N` | quick scan: only the farthest N days of the window |
+| `--month M` | quick scan: only calendar month M (1-12), next bookable occurrence; implies `--once` |
 | `--max-cycles N` | run the loop for N cycles then exit (testing) |
 
 ## Notes
