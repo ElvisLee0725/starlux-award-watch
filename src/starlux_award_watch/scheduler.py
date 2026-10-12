@@ -88,7 +88,15 @@ class Runner:
                 log.warning("fetch_failed", search=search.name, pass_=label, error=str(exc))
                 continue
 
+            # A day can return several fares (other flights, other price levels)
+            # under the same key; record only the cheapest so `seen` isn't left
+            # holding whichever fare happened to be parsed last.
+            cheapest: dict[tuple, AwardDay] = {}
             for day in days:
+                k = day.key()
+                if k not in cheapest or day.miles < cheapest[k].miles:
+                    cheapest[k] = day
+            for day in cheapest.values():
                 self.store.record_seen(day)
 
             for hit in filter_hits(search, days):

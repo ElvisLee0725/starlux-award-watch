@@ -111,3 +111,12 @@ def test_pass_summary_counts_hits(tmp_path):
     msg = r.pass_summary("once", lo, hi, False)
     assert "no saving tickets found" in msg and "CAPTCHA" in msg
     store.close()
+
+
+def test_seen_keeps_cheapest_fare_per_day(tmp_path):
+    d = date.today() + timedelta(days=5)
+    # saver parsed first, a pricier fare for the same day parsed after it
+    r, _f, _n, store = _runner(tmp_path, [_hit(d, 75000), _hit(d, 250000)])
+    r.run_pass(*r._full_range(), "full")
+    k = "|".join(_hit(d).key())
+    assert store.db.execute("SELECT miles FROM seen WHERE k=?", (k,)).fetchone()[0] == 75000
